@@ -1,0 +1,206 @@
+/*
+ * Tailwind-overrides.css — Semantic-class bridge for OrnitoPHP.
+ *
+ * Our views use framework-agnostic component names (.btn-primary, .card,
+ * .auth-card…). When Tailwind is the active preset, this thin file maps
+ * those same class names to Tailwind utility equivalents so the views
+ * never change — only the stylesheet does.
+ *
+ * Bootstrap users get these mappings for free (its class names already
+ * match ours). Tailwind needs them explicitly because it is utility-first
+ * and has no opinion about component names.
+ *
+ * Why a separate file instead of @apply in a <style> block?
+ * The Tailwind CDN (JIT in the browser) cannot process @apply inside
+ * its own runtime. A plain-CSS file loaded after the CDN script works
+ * because the utilities it references are already in memory.
+ */
+
+/* ---- Layout --------------------------------------------------------- */
+
+.container {
+    max-width: 60rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem 1.25rem 3rem;
+}
+
+/* ---- Hero ----------------------------------------------------------- */
+
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3.5rem 1rem 2.5rem;
+    text-align: center;
+}
+
+.hero-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* ---- Buttons -------------------------------------------------------- */
+
+.btn {
+    display: inline-block;
+    padding: 0.55rem 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(96, 72, 240, 0.45);
+}
+
+.btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, #6048f0, #7848f0);
+}
+
+.btn-primary:hover {
+    filter: brightness(1.12);
+}
+
+.btn-danger {
+    color: #f05a5a;
+    background: transparent;
+    border-color: #2a2a4a;
+}
+
+.btn-danger:hover {
+    color: #fff;
+    background: #f05a5a;
+    border-color: #f05a5a;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+/* ---- Card ----------------------------------------------------------- */
+
+.card {
+    background: #181830;
+    border: 1px solid #2a2a4a;
+    border-radius: 0.625rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    padding: 2rem 2.25rem;
+}
+
+/* ---- Forms ---------------------------------------------------------- */
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    font-family: inherit;
+    color: #eef0ff;
+    background: #0b0b14;
+    border: 1px solid #2a2a4a;
+    border-radius: 0.5rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control::placeholder {
+    color: #9aa0c3;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #6048f0;
+    box-shadow: 0 0 0 3px rgba(96, 72, 240, 0.45);
+}
+
+.field {
+    margin-bottom: 1rem;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #9aa0c3;
+}
+
+/* ---- Alerts --------------------------------------------------------- */
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.1rem;
+    font-size: 0.92rem;
+}
+
+.alert ul {
+    margin: 0.3rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.alert-error {
+    background: rgba(240, 90, 90, 0.12);
+    border: 1px solid rgba(240, 90, 90, 0.4);
+    color: #f05a5a;
+}
+
+.alert-success {
+    background: rgba(88, 214, 141, 0.12);
+    border: 1px solid rgba(88, 214, 141, 0.4);
+    color: #58d68d;
+}
+
+/* ---- Auth card ------------------------------------------------------ */
+
+.auth-card {
+    max-width: 24rem;
+    margin: 3rem auto 0;
+}
+
+.auth-card h1 {
+    margin: 1.25rem 0;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.auth-icon {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+    border-radius: 0.9rem;
+}
+
+.auth-hint {
+    margin-top: 1.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #9aa0c3;
+}
+
+/* ---- Responsive ----------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .hero {
+        padding-top: 2.25rem;
+    }
+}

@@ -1,0 +1,458 @@
+/*
+ * OrnitoPHP — shared design system.
+ * Dark theme built from the brand palette sampled from the logo assets.
+ */
+
+:root {
+    /* Brand palette */
+    --ornito-primary: #6048f0;
+    --ornito-primary-strong: #7848f0;
+    --ornito-blue: #4878f0;
+    --ornito-blue-deep: #3078f0;
+    --ornito-accent: #c07848;
+    --ornito-sand: #f0d8a8;
+
+    /* Surfaces */
+    --ornito-bg: #0b0b14;
+    --ornito-surface: #181830;
+
+    /* Derived tones */
+    --ornito-text: #eef0ff;
+    --ornito-muted: #9aa0c3;
+    --ornito-border: #2a2a4a;
+    --ornito-surface-raised: #1e1e3a;
+    --ornito-danger: #f05a5a;
+    --ornito-danger-bg: rgba(240, 90, 90, .12);
+    --ornito-success: #58d68d;
+    --ornito-success-bg: rgba(88, 214, 141, .12);
+    --ornito-focus-ring: rgba(96, 72, 240, .45);
+
+    --ornito-radius: .625rem;
+    --ornito-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+
+/*
+ * Light theme — toggled by data-theme="light" on <html>.
+ * Only the surface/color tokens flip; every component using var() follows.
+ */
+[data-theme="light"] {
+    --ornito-bg: #f5f5fa;
+    --ornito-surface: #ffffff;
+    --ornito-text: #1a1a2e;
+    --ornito-muted: #5a5a7a;
+    --ornito-border: #d8d8e8;
+    --ornito-surface-raised: #eeeef6;
+    --ornito-danger: #d93025;
+    --ornito-danger-bg: rgba(217, 48, 37, .08);
+    --ornito-success: #1a7f37;
+    --ornito-success-bg: rgba(26, 127, 55, .08);
+    --ornito-focus-ring: rgba(96, 72, 240, .3);
+    --ornito-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+}
+
+[data-theme="light"] body {
+    background-image: none;
+}
+
+/* --- Base ------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ornito-text);
+    background-color: var(--ornito-bg);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(120, 72, 240, .22), transparent),
+        linear-gradient(180deg, var(--ornito-surface) 0%, var(--ornito-bg) 45%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.25;
+    color: var(--ornito-text);
+}
+
+code {
+    padding: .1rem .4rem;
+    border-radius: .3rem;
+    font-size: .9em;
+    background: rgba(240, 216, 168, .1);
+    color: var(--ornito-sand);
+}
+
+a {
+    color: var(--ornito-primary-strong);
+}
+
+a:hover {
+    color: #9a85ff;
+}
+
+.container {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+}
+
+footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ornito-border);
+    color: var(--ornito-muted);
+    font-size: .85rem;
+}
+
+/* --- Card -------------------------------------------------------------- */
+
+.card {
+    background: var(--ornito-surface);
+    border: 1px solid var(--ornito-border);
+    border-radius: var(--ornito-radius);
+    box-shadow: var(--ornito-shadow);
+    padding: 2rem 2.25rem;
+}
+
+/* --- Forms -------------------------------------------------------------- */
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: .6rem .75rem;
+    font: inherit;
+    color: var(--ornito-text);
+    background: var(--ornito-bg);
+    border: 1px solid var(--ornito-border);
+    border-radius: .5rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-control::placeholder {
+    color: var(--ornito-muted);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--ornito-primary);
+    box-shadow: 0 0 0 3px var(--ornito-focus-ring);
+}
+
+.field {
+    margin-bottom: 1rem;
+}
+
+.field label {
+    display: block;
+    margin-bottom: .3rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ornito-muted);
+}
+
+/* --- Buttons ------------------------------------------------------------ */
+
+.btn {
+    display: inline-block;
+    padding: .55rem 1.25rem;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: .5rem;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ornito-focus-ring);
+}
+
+.btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--ornito-primary), var(--ornito-primary-strong));
+}
+
+.btn-primary:hover {
+    filter: brightness(1.12);
+}
+
+.btn-ghost {
+    color: var(--ornito-text);
+    background: transparent;
+    border-color: var(--ornito-border);
+}
+
+.btn-ghost:hover {
+    border-color: var(--ornito-primary-strong);
+    color: var(--ornito-primary-strong);
+}
+
+.btn-danger {
+    color: var(--ornito-danger);
+    background: transparent;
+    border-color: var(--ornito-border);
+}
+
+.btn-danger:hover {
+    color: #fff;
+    background: var(--ornito-danger);
+    border-color: var(--ornito-danger);
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+/* --- Alerts ------------------------------------------------------------- */
+
+.alert {
+    padding: .75rem 1rem;
+    border-radius: .5rem;
+    margin-bottom: 1.1rem;
+    font-size: .92rem;
+}
+
+.alert ul {
+    margin: .3rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.alert-error {
+    background: var(--ornito-danger-bg);
+    border: 1px solid rgba(240, 90, 90, .4);
+    color: var(--ornito-danger);
+}
+
+.alert-success {
+    background: var(--ornito-success-bg);
+    border: 1px solid rgba(88, 214, 141, .4);
+    color: var(--ornito-success);
+}
+
+/* --- Badge ---------------------------------------------------------------- */
+
+.badge {
+    display: inline-block;
+    padding: .15rem .65rem;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #241703;
+    background: linear-gradient(135deg, var(--ornito-sand), var(--ornito-accent));
+    border-radius: 999px;
+}
+
+/* --- Topbar ---------------------------------------------------------------- */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(11, 11, 20, .85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--ornito-border);
+}
+
+.topbar-inner {
+    max-width: 60rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .7rem 1.25rem;
+}
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    color: var(--ornito-text);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.topbar-brand img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: block;
+}
+
+.topbar-user {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    color: var(--ornito-muted);
+    font-size: .9rem;
+}
+
+.topbar-user code {
+    background: none;
+    padding: 0;
+}
+
+/* --- Hero ------------------------------------------------------------------- */
+
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3.5rem 1rem 2.5rem;
+    text-align: center;
+}
+
+.hero img {
+    width: 96px;
+    height: 96px;
+    border-radius: 1.25rem;
+    box-shadow: var(--ornito-shadow);
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.hero p {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--ornito-muted);
+    font-size: 1.1rem;
+}
+
+.hero-actions {
+    margin-top: .75rem;
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* --- Auth card ---------------------------------------------------------------- */
+
+.auth-card {
+    max-width: 24rem;
+    margin: 3rem auto 0;
+}
+
+.auth-card h1 {
+    margin: 1.25rem 0;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.auth-icon {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+    border-radius: .9rem;
+}
+
+.auth-hint {
+    margin-top: 1.25rem;
+    text-align: center;
+    font-size: .8rem;
+    color: var(--ornito-muted);
+}
+
+/* --- Dashboard ------------------------------------------------------------------ */
+
+.dash-logo {
+    display: block;
+    max-width: 100%;
+    width: 34rem;
+    margin: 1.5rem auto;
+    border-radius: var(--ornito-radius);
+    box-shadow: var(--ornito-shadow);
+}
+
+.logout-form {
+    display: inline;
+    margin-left: auto;
+}
+
+/* --- Theme toggle --------------------------------------------------------- */
+
+.theme-toggle {
+    position: fixed;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    z-index: 100;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--ornito-border);
+    background: var(--ornito-surface);
+    box-shadow: var(--ornito-shadow);
+    cursor: pointer;
+    font-size: 1.15rem;
+    line-height: 1;
+    transition: background-color .2s ease, border-color .2s ease, transform .15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Moon shows in dark mode (click → switch to light) */
+.theme-toggle-icon--dark {
+    display: inline;
+}
+
+/* Sun shows in light mode (click → switch to dark) */
+.theme-toggle-icon--light {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle-icon--dark {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle-icon--light {
+    display: inline;
+}
+
+/* --- Responsive ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .topbar-inner {
+        flex-wrap: wrap;
+    }
+
+    .hero {
+        padding-top: 2.25rem;
+    }
+}
