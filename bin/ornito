@@ -1,0 +1,175 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * OrnitoPHP console entry point.
+ *
+ * Windows usage:  php bin\ornito <command> [args...]
+ * Unix usage:     php bin/ornito <command> [args...]
+ *
+ * (The shebang keeps it unix-friendly, but never rely on it — invoke the
+ * script through the PHP interpreter.)
+ *
+ * Minimal bootstrap ON PURPOSE: only the Composer autoloader is required.
+ * Application::boot() is deliberately NOT called — this console needs no
+ * sessions and no web kernel. The DB-bound commands (migrate, db:seed,
+ * db:fresh) load Env themselves, exactly like the standalone scripts they
+ * absorbed.
+ */
+
+use Ornito\Console\Commands\AuthModuleCommand;
+use Ornito\Console\Commands\CreateControllerCommand;
+use Ornito\Console\Commands\CreateModelCommand;
+use Ornito\Console\Commands\FreshDatabaseCommand;
+use Ornito\Console\Commands\MigrateCommand;
+use Ornito\Console\Commands\SeedCommand;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$baseDir = dirname(__DIR__);
+
+$createModel = new CreateModelCommand(
+    modelsDir: $baseDir . '/app/Models',
+    migrationsDir: $baseDir . '/database/migrations',
+);
+$createController = new CreateControllerCommand();
+// One class, two directions: the registry binds one instance per command name.
+$authShow = new AuthModuleCommand(show: true);
+$authHide = new AuthModuleCommand(show: false);
+$migrate = new MigrateCommand();
+$seed = new SeedCommand();
+$fresh = new FreshDatabaseCommand();
+
+/**
+ * Flush a command's quiet message buffer to STDOUT/STDERR. Commands never
+ * print — this entry point owns the streams.
+ *
+ * Every command here exposes the same contract:
+ * execute(args): int + messages(): list<array{stream: string, text: string}>.
+ *
+ * @param object $command one of the console commands above
+ */
+$flushMessages = static function (object $command): void {
+    foreach ($command->messages() as $message) {
+        fwrite(
+            $message['stream'] === 'err' ? STDERR : STDOUT,
+            $message['text'] . PHP_EOL,
+        );
+    }
+};
+
+/**
+ * Registered-command map.
+ */
+$registry = [
+    'create:model' => [
+        'description' => 'Generate a model class plus its create-table migration.',
+        'usage' => 'php bin/ornito create:model <Name> [column:type ...] [--table=custom_table] [--force]',
+        'run' => static function (array $args) use ($createModel, $flushMessages): int {
+            $exitCode = $createModel->execute($args);
+            ($flushMessages)($createModel);
+
+            return $exitCode;
+        },
+    ],
+    'create:controller' => [
+        'description' => 'Generate an empty controller class in app/Controllers.',
+        'usage' => 'php bin/ornito create:controller <Name> [--force]',
+        'run' => static function (array $args) use ($createController, $flushMessages): int {
+            $exitCode = $createController->execute($args);
+            ($flushMessages)($createController);
+
+            return $exitCode;
+        },
+    ],
+    'migrate' => [
+        'description' => 'Apply pending database migrations (creates the DB if missing).',
+        'usage' => 'php bin/ornito migrate',
+        'run' => static function (array $args) use ($migrate, $flushMessages): int {
+            $exitCode = $migrate->execute($args);
+            ($flushMessages)($migrate);
+
+            return $exitCode;
+        },
+    ],
+    'db:seed' => [
+        'description' => 'Create or refresh the demo user.',
+        'usage' => 'php bin/ornito db:seed',
+        'run' => static function (array $args) use ($seed, $flushMessages): int {
+            $exitCode = $seed->execute($args);
+            ($flushMessages)($seed);
+
+            return $exitCode;
+        },
+    ],
+    'db:fresh' => [
+        'description' => 'DESTRUCTIVE: drop ALL tables, then migrate + seed. Asks for confirmation unless --force.',
+        'usage' => 'php bin/ornito db:fresh [--force]',
+        'run' => static function (array $args) use ($fresh, $flushMessages): int {
+            $exitCode = $fresh->execute($args);
+            ($flushMessages)($fresh);
+
+            return $exitCode;
+        },
+    ],
+    'show:auth-module' => [
+        'description' => 'Expose the built-in login/register pages (opt-in auth demo module).',
+        'usage' => 'php bin/ornito show:auth-module',
+        'run' => static function (array $args) use ($authShow, $flushMessages): int {
+            $exitCode = $authShow->execute($args);
+            ($flushMessages)($authShow);
+
+            return $exitCode;
+        },
+    ],
+    'hide:auth-module' => [
+        'description' => 'Hide the built-in login/register pages again.',
+        'usage' => 'php bin/ornito hide:auth-module',
+        'run' => static function (array $args) use ($authHide, $flushMessages): int {
+            $exitCode = $authHide->execute($args);
+            ($flushMessages)($authHide);
+
+            return $exitCode;
+        },
+    ],
+    'help' => [
+        'description' => 'Show available commands and usage.',
+        'usage' => 'php bin/ornito help',
+    ],
+];
+
+$printHelp = static function (bool $toStdout) use ($registry): void {
+    $stream = $toStdout ? STDOUT : STDERR;
+
+    fwrite($stream, "OrnitoPHP console\n\n");
+    fwrite($stream, "Usage:\n  php bin/ornito <command> [args...]\n\n");
+    fwrite($stream, "Available commands:\n");
+
+    foreach ($registry as $name => $meta) {
+        fprintf($stream, "  %-18s %s\n", $name, (string) $meta['description']);
+        fprintf($stream, "      %s\n", (string) $meta['usage']);
+    }
+};
+
+$command = $argv[1] ?? 'help';
+$args = array_slice($argv, 2);
+
+if ($command === 'help') {
+    ($printHelp)(true);
+
+    exit(0);
+}
+
+if (!isset($registry[$command]['run'])) {
+    fprintf(STDERR, "Unknown command '%s'.%s%s", $command, PHP_EOL, PHP_EOL);
+    ($printHelp)(false);
+
+    exit(1);
+}
+
+/** @var callable(array<int, string>): int $run */
+$run = $registry[$command]['run'];
+
+exit((int) $run($args));
