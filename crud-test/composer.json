@@ -21,7 +21,6 @@
         }
     },
     "scripts": {
-        "serve": "php -S localhost:8080 -t public",
         "post-create-project-cmd": [
             "php bin/ornito migrate",
             "php bin/ornito db:seed"

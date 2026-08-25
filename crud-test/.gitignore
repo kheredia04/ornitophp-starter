@@ -1,0 +1,7 @@
+vendor/
+.env
+storage/logs/*.log
+storage/ratelimit/
+storage/auth-module.enabled
+.phpunit.cache/
+.phpunit.result.cache
