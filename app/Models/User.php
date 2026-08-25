@@ -12,5 +12,15 @@ use Ornito\Model;
  */
 final class User extends Model
 {
-    protected string $table = 'users';
+    protected static string $table = 'users';
+
+    /**
+     * Find a user by their email address.
+     */
+    public static function findByEmail(string $email): ?array
+    {
+        $results = self::where('email', $email);
+
+        return $results[0] ?? null;
+    }
 }
