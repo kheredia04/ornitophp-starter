@@ -5,3 +5,4 @@ storage/ratelimit/
 storage/auth-module.enabled
 .phpunit.cache/
 .phpunit.result.cache
+crud-test/
