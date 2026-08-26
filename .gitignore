@@ -6,3 +6,4 @@ storage/auth-module.enabled
 .phpunit.cache/
 .phpunit.result.cache
 crud-test/
+crud-test/

@@ -1,0 +1,13 @@
+# Front-controller pattern: any request that does not map to an existing
+# file or directory inside public/ is rewritten to index.php, which boots
+# the framework kernel and sends exactly one Response. Static assets are
+# served by Apache directly.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Serve real files (css/js/images) and directories as-is.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
