@@ -19,6 +19,7 @@ final class HomeController extends Controller
         return $this->view('home', [
             'title' => 'Welcome',
             'appName' => (string) config('app.name', 'OrnitoPHP'),
+            'isAuthenticated' => is_array(Session::get('user')),
             'authEnabled' => auth_module_enabled(),
         ]);
     }
