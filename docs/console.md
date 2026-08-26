@@ -42,23 +42,40 @@ composer serve         # → php -S localhost:8080 -t public
 Generates two files: a model class and a SQL migration.
 
 ```bash
-php bin\ornito create:model Producto nombre:string precio:decimal stock:int activo:boolean
+php bin\ornito create:model Animal nombre:string tipo:string cantidad:int mamifero:boolean
 ```
 
 This creates:
-- `app/Models/Producto.php` — model class with `$table = 'productos'`
-- `database/migrations/0002_create_productos.sql` — migration with your columns
+- `app/Models/Animal.php` — model class with `$table = 'animales'`
+- `database/migrations/0002_create_animales.sql` — migration with your columns
+
+The migration file looks like this:
+
+```sql
+CREATE TABLE IF NOT EXISTS `animales` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `nombre` VARCHAR(255) NOT NULL,
+    `tipo` VARCHAR(255) NOT NULL,
+    `cantidad` INT NOT NULL,
+    `mamifero` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
 
 ### Column types
 
-| Type | SQL fragment |
-|---|---|
-| `string` | `` `{col}` VARCHAR(255) NOT NULL`` |
-| `text` | `` `{col}` TEXT NULL`` |
-| `int` | `` `{col}` INT NOT NULL`` |
-| `boolean` | `` `{col}` TINYINT(1) NOT NULL DEFAULT 0`` |
-| `decimal` | `` `{col}` DECIMAL(10,2) NULL`` |
-| `datetime` | `` `{col}` DATETIME NULL`` |
+Each column is specified as `name:type`. The type maps to a SQL fragment:
+
+| Type | SQL fragment | Example |
+|---|---|---|
+| `string` | `VARCHAR(255) NOT NULL` | `nombre:string` → `nombre VARCHAR(255) NOT NULL` |
+| `text` | `TEXT NULL` | `descripcion:text` → `descripcion TEXT NULL` |
+| `int` | `INT NOT NULL` | `cantidad:int` → `cantidad INT NOT NULL` |
+| `boolean` | `TINYINT(1) NOT NULL DEFAULT 0` | `activo:boolean` → `activo TINYINT(1) NOT NULL DEFAULT 0` |
+| `decimal` | `DECIMAL(10,2) NULL` | `precio:decimal` → `precio DECIMAL(10,2) NULL` |
+| `datetime` | `DATETIME NULL` | `fecha:datetime` → `fecha DATETIME NULL` |
+
+Every table also gets `id` (auto-increment primary key) and `created_at` (timestamp) automatically.
 
 ### Options
 
