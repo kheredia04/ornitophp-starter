@@ -46,7 +46,9 @@ Only the exact answer `yes` proceeds. Anything else aborts with exit code 1 and 
 
 ## The Model
 
-Every model extends `Ornito\Model` and declares its table:
+OrnitoPHP has no ORM. Your model **is** the table. One line of configuration (`$table`) gives you all CRUD operations. No magic, no lazy loading, no hidden queries.
+
+### How it works
 
 ```php
 declare(strict_types=1);
@@ -57,9 +59,69 @@ use Ornito\Model;
 
 final class User extends Model
 {
-    protected static string $table = 'users';
+    protected static string $table = 'users';  // ← this is everything you need
 }
 ```
+
+That's it. Extend `Ornito\Model`, declare the table, and you get:
+
+| Method | SQL generated |
+|---|---|
+| `User::all()` | `SELECT * FROM users` |
+| `User::find(1)` | `SELECT * FROM users WHERE id = 1` |
+| `User::where('email', 'x')` | `SELECT * FROM users WHERE email = :value` |
+| `User::insert([...])` | `INSERT INTO users (...) VALUES (...)` |
+| `User::update(1, [...])` | `UPDATE users SET ... WHERE id = 1` |
+| `User::delete(1)` | `DELETE FROM users WHERE id = 1` |
+| `User::query()` | Fluent QueryBuilder (see below) |
+
+All values are bound as prepared statement parameters — never interpolated into SQL.
+
+### Why no ORM?
+
+An ORM (like Eloquent) maps database rows to PHP objects. It adds convenience — relationships, lazy loading, scopes — but also adds **abstraction**. When something goes wrong, you debug the ORM, not the SQL.
+
+OrnitoPHP does the opposite: **SQL is honest**. What you write is what runs. No hidden queries, no N+1 problems, no lazy loading surprises. You learn how databases actually work.
+
+| Eloquent (ORM) | OrnitoPHP (no ORM) |
+|---|---|
+| `User::where('active', true)->get()` | `User::query()->where('active', '=', true)->get()` |
+| Returns `User` objects | Returns **arrays** |
+| `hasMany`, `belongsTo` | No relationships — write the query |
+| `$user->save()` | `User::update($id, $data)` |
+| Hidden joins and subqueries | Every query is visible |
+
+### Adding custom queries
+
+When you need something beyond basic CRUD, add methods to your model:
+
+```php
+final class Animal extends Model
+{
+    protected static string $table = 'animales';
+
+    // Fluent query builder
+    public static function findMamiferos(): array
+    {
+        return static::query()
+            ->where('mamifero', '=', 1)
+            ->orderBy('nombre', 'ASC')
+            ->get();
+    }
+
+    // Raw SQL for complex queries (joins, OR, grouping)
+    public static function countByTipo(): array
+    {
+        $stmt = static::prepare(
+            'SELECT tipo, COUNT(*) as total FROM animales GROUP BY tipo'
+        );
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+}
+```
+
+**Rule of thumb:** Use the query builder for simple reads. Use raw SQL for joins, OR chains, grouping, or anything the builder can't express.
 
 ### CRUD operations
 
@@ -86,8 +148,6 @@ User::update(42, ['name' => 'Perrito']);
 // Delete a row by id
 User::delete(42);
 ```
-
-All values are bound as prepared statement parameters — never interpolated into SQL.
 
 ## Fluent Query Builder
 
