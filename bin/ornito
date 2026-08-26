@@ -28,6 +28,8 @@ use Ornito\Console\Commands\SeedCommand;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+define('ORNITO_ROOT', dirname(__DIR__));
+
 $baseDir = dirname(__DIR__);
 
 $createModel = new CreateModelCommand(
