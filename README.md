@@ -63,7 +63,8 @@ This isn't a framework you document *after*. It's designed to be read:
 
 - Every decision has a **why** in the docblocks
 - The `docs/` folder explains design rules — not just API reference
-- The test suite **is** the living documentation (150 tests, 429 assertions)
+- The query builder shows the SQL it runs (`toSql()`, `toPreviewSql()`) — no hidden queries
+- The test suite **is** the living documentation (192 tests, 572 assertions)
 - Edge cases are tested and explained
 
 ### 5. Dual error negotiation
