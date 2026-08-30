@@ -39,6 +39,8 @@ Most frameworks give you security as an add-on layer. OrnitoPHP has it in the bo
 - **Superglobals quarantined** — only `Request::capture()` touches them
 - **CSRF with timing-safe validation** (`hash_equals`), exempt for `/api` segments
 - **Open-redirect prevention** in `AuthController::safeTarget()`
+- **Layered login throttling** — account|ip, pure IP and pure account
+  buckets checked together, so rotating emails or IPs cannot dodge the cap
 - **File-backed rate limiting** with zero external dependencies
 
 This isn't a framework that "can be secure." It's one where SQL injection is **structurally difficult**.
@@ -150,6 +152,7 @@ The views never change. Only the CSS loads differently. That's the Strategy patt
 - [Error Handling](docs/error-handling.md)
 - [JWT Authentication](docs/jwt-auth.md)
 - [Console Commands](docs/console.md)
+- [Login Throttling](docs/security.md)
 
 ## License
 

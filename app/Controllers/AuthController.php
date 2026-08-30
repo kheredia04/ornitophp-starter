@@ -8,6 +8,7 @@ use App\Models\User;
 use Ornito\Controller;
 use Ornito\Http\Request;
 use Ornito\Http\Response;
+use Ornito\Security\LoginThrottle;
 use Ornito\Security\RateLimiter;
 use Ornito\Session\Session;
 use Ornito\Validation\Validator;
@@ -22,8 +23,9 @@ use Ornito\Validation\Validator;
  *   cross-site form posts.
  * - Wrong email and wrong password produce the SAME generic message,
  *   so responses never leak which accounts exist.
- * - Login attempts are throttled per email+IP (RateLimiter) before
- *   credentials are ever checked, blunting online brute force.
+ * - Login attempts are throttled by LAYERS (LoginThrottle): account|ip,
+ *   pure ip, pure account. A single "email|ip" key lets an attacker rotate
+ *   emails for a fresh bucket; the ip and account layers cannot be rotated.
  * - Post-login redirects go through safeTarget(): the remembered URL is
  *   used only when it is a same-site absolute path (open-redirect guard).
  */
@@ -61,24 +63,28 @@ final class AuthController extends Controller
             return Response::redirect('/login');
         }
 
-        // Throttle BEFORE credential verification: the counter key binds the
-        // submitted email to the client IP, so rotating emails does not
-        // rotate buckets and rotating IPs does not either.
-        $key = sha1(strtolower($data['email']) . '|' . $request->ip());
-        $limiter = new RateLimiter(storage_path('ratelimit'));
-        $maxAttempts = (int) config('auth.login.max_attempts', 5);
-        $decaySeconds = (int) config('auth.login.decay_seconds', 60);
+        // Throttle BEFORE credential verification. Three independent buckets
+        // are checked (see Ornito\Security\LoginThrottle): account|ip, pure
+        // ip and pure account. Rotating emails or rotating IPs rotates the
+        // first, but the ip and account buckets stay put — the attack that
+        // dodges a single "email|ip" key cannot dodge all three.
+        $throttle = LoginThrottle::fromConfig(
+            $data['email'],
+            $request->ip(),
+            new RateLimiter(storage_path('ratelimit')),
+            (array) config('auth.login.throttle', []),
+        );
 
-        if ($limiter->tooManyAttempts($key, $maxAttempts)) {
+        if ($throttle->tooManyAttempts()) {
             Session::flash('error', sprintf(
                 'Too many login attempts. Please try again in %d seconds.',
-                $limiter->availableIn($key),
+                $throttle->availableIn(),
             ));
 
             return Response::redirect('/login');
         }
 
-        $limiter->hit($key, $decaySeconds);
+        $throttle->hit();
 
         $user = User::findByEmail($data['email']);
         $passwordHash = is_string($user['password_hash'] ?? null) ? $user['password_hash'] : '';
@@ -90,8 +96,10 @@ final class AuthController extends Controller
             return Response::redirect('/login');
         }
 
-        // Successful authentication: forget the failure history for this key.
-        $limiter->clear($key);
+        // Successful authentication: forget the per-account failure history
+        // (account|ip and account buckets). The pure ip bucket persists on
+        // purpose — see LoginThrottle for the reasoning.
+        $throttle->clear();
 
         return self::startSessionFor($user);
     }
