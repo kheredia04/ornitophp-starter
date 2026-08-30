@@ -28,11 +28,24 @@ use Ornito\Validation\Validator;
  *   emails for a fresh bucket; the ip and account layers cannot be rotated.
  * - Post-login redirects go through safeTarget(): the remembered URL is
  *   used only when it is a same-site absolute path (open-redirect guard).
+ * - Login timing is equalized: password_verify() runs even when the account
+ *   does not exist (fixed dummy hash), so response time cannot reveal which
+ *   emails are registered.
+ * - Registration probes are throttled per-IP under a dedicated "r:" bucket:
+ *   the taken-email answer is observable by necessity, the volume is not.
  */
 final class AuthController extends Controller
 {
     /** Fallback landing spot when no (or an unsafe) intended URL is stored. */
     private const DEFAULT_TARGET = '/dashboard';
+
+    /**
+     * Fixed bcrypt hash (cost 12 — the PHP 8.4 password_hash() default)
+     * verified against unknown accounts so login timing cannot reveal
+     * registration state. Must match the cost the app uses: a cheaper dummy
+     * would leak again.
+     */
+    private const DUMMY_HASH = '$2y$12$jMMelCcFZxPwK3.fzPVX3.mwjqNtLiAmTwOU2H478eV6wVppnRUFK';
 
     public function showLogin(Request $request): Response
     {
@@ -87,9 +100,18 @@ final class AuthController extends Controller
         $throttle->hit();
 
         $user = User::findByEmail($data['email']);
-        $passwordHash = is_string($user['password_hash'] ?? null) ? $user['password_hash'] : '';
 
-        if ($user === null || !password_verify($data['password'], $passwordHash)) {
+        // Timing equalizer: password_verify() runs even when the account
+        // does not exist. A short-circuit ($user === null || ...) would SKIP
+        // the hash work for unknown emails, and the response-time difference
+        // would tell attackers which addresses are registered. The dummy
+        // hash costs the same as a real one, so both paths behave alike.
+        $passwordHash = is_string($user['password_hash'] ?? null)
+            ? $user['password_hash']
+            : self::DUMMY_HASH;
+        $passwordValid = password_verify($data['password'], $passwordHash);
+
+        if ($user === null || !$passwordValid) {
             Session::flash('error', 'Invalid credentials.');
             Session::flash('email', $data['email']);
 
@@ -146,9 +168,27 @@ final class AuthController extends Controller
             return Response::redirect('/register');
         }
 
-        // Unlike login, registration may reveal that an email exists — a
-        // uniqueness claim makes the taken/taken-not answer observable by
-        // necessity (the visitor can just try to log in to confirm).
+        // Registration may reveal that an email exists — the uniqueness claim
+        // makes taken/taken-not observable by necessity. The VOLUME is
+        // controlled here: probes are capped per-IP under a dedicated "r:"
+        // bucket, so /register hammering never shares (or mutates) the login
+        // counters and vice versa. Per-email buckets would be rotatable, and
+        // there is no account to throttle before it exists.
+        $registerThrottle = self::registerThrottle($request);
+
+        if ($registerThrottle->tooManyAttempts()) {
+            Session::flash('error', sprintf(
+                'Too many registration attempts. Please try again in %d seconds.',
+                $registerThrottle->availableIn(),
+            ));
+            Session::flash('name', $data['name']);
+            Session::flash('email', $data['email']);
+
+            return Response::redirect('/register');
+        }
+
+        $registerThrottle->hit();
+
         if (User::findByEmail($data['email']) !== null) {
             Session::flash('errors', ['email' => 'That email address is already registered.']);
             Session::flash('name', $data['name']);
@@ -178,6 +218,31 @@ final class AuthController extends Controller
         Session::destroy();
 
         return Response::redirect('/login');
+    }
+
+    /**
+     * Per-IP registration throttle. The dedicated "r:" bucket keeps this
+     * counter separate from the login-shaped keys, and successful auths
+     * never clear it (see LoginThrottle::clear()).
+     */
+    private static function registerThrottle(Request $request): LoginThrottle
+    {
+        $ip = (array) (config('auth.register.throttle', [])['ip'] ?? []);
+
+        if (($ip['enabled'] ?? true) === false) {
+            return LoginThrottle::fromBuckets(new RateLimiter(storage_path('ratelimit')), []);
+        }
+
+        return LoginThrottle::fromBuckets(
+            new RateLimiter(storage_path('ratelimit')),
+            [
+                [
+                    'key' => sprintf('r:%s', $request->ip()),
+                    'max_attempts' => (int) ($ip['max_attempts'] ?? 20),
+                    'decay_seconds' => (int) ($ip['decay_seconds'] ?? 3600),
+                ],
+            ],
+        );
     }
 
     /**

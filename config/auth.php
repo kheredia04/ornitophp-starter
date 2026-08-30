@@ -15,6 +15,11 @@ declare(strict_types=1);
  * A successful login clears the per-account buckets (account_ip, account);
  * the pure ip bucket persists on purpose so shared addresses (NAT, offices)
  * are not reset by a single successful neighbour login.
+ *
+ * Registration is throttled by IP only ('register.throttle.ip'): a
+ * per-email bucket would be rotatable and there is no account to throttle
+ * before it exists. The endpoint uses LoginThrottle::fromBuckets() under a
+ * dedicated "r:" prefix so /register probes never mutate the login counters.
  */
 return [
     'login' => [
@@ -32,6 +37,15 @@ return [
                 'enabled' => true,
                 'max_attempts' => 10,
                 'decay_seconds' => 300,
+            ],
+        ],
+    ],
+    'register' => [
+        'throttle' => [
+            'ip' => [
+                'enabled' => true,
+                'max_attempts' => 20,
+                'decay_seconds' => 3600,
             ],
         ],
     ],

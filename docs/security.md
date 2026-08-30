@@ -64,3 +64,70 @@ bucket when you run behind a trusted proxy chain and do not want to penalise
 shared NAT ranges.
 
 This is the OWASP-recommended shape for credential-stuffing defense.
+
+## Equalized login timing
+
+`password_verify()` runs whenever the hashed password is non-empty — but an
+`if ($user === null || !password_verify(...))` short-circuit only VERIFIES
+when the user exists, turning response time into an account-existence
+oracle. The pattern that closes it: always run the verification, against a
+fixed dummy hash when no account exists, and branch on the boolean result:
+
+```php
+$hash  = is_string($user['password_hash'] ?? null) ? $user['password_hash'] : DUMMY_HASH;
+$valid = password_verify($password, $hash);
+
+if ($user === null || !$valid) {
+    // Invalid credentials.
+}
+```
+
+`DUMMY_HASH` must be a `password_hash()` output with the SAME cost as real
+hashes (PHP 8.4 default is bcrypt cost 12) so both paths take comparable
+time.
+
+## Registration throttling
+
+The registration uniqueness check makes the "taken vs free" answer
+observable by necessity — a signup form cannot hide it. The volume is what
+you control: throttle `/register` by IP alone under a dedicated bucket.
+Per-email buckets would be rotatable (fresh address → fresh bucket) and
+there is no account to throttle before it exists. The dedicated `r:` prefix
+(see `LoginThrottle::fromBuckets()`) keeps registration probes from mutating
+the login counters and vice versa.
+
+```php
+// config/auth.php
+'register' => [
+    'throttle' => [
+        'ip' => [
+            'enabled' => true,
+            'max_attempts' => 20,
+            'decay_seconds' => 3600,
+        ],
+    ],
+],
+```
+
+```php
+$throttle = LoginThrottle::fromBuckets(
+    new RateLimiter(storage_path('ratelimit')),
+    [
+        [
+            'key' => sprintf('r:%s', $request->ip()),
+            'max_attempts' => (int) config('auth.register.throttle.ip.max_attempts', 20),
+            'decay_seconds' => (int) config('auth.register.throttle.ip.decay_seconds', 3600),
+        ],
+    ],
+);
+
+if ($throttle->tooManyAttempts()) {
+    // "Too many registration attempts. Please try again in N seconds."
+}
+$throttle->hit();
+```
+
+Caveat: `clear()` only ever removes the login-shaped account buckets
+(`ai:` / `a:`). Registration counters under `r:` are deliberately left
+alone — a successful login or registration must not reset the IP's probe
+history.
