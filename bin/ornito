@@ -22,6 +22,7 @@ declare(strict_types=1);
 use Ornito\Console\Commands\AuthModuleCommand;
 use Ornito\Console\Commands\CreateControllerCommand;
 use Ornito\Console\Commands\CreateModelCommand;
+use Ornito\Console\Commands\CreateRelationCommand;
 use Ornito\Console\Commands\FreshDatabaseCommand;
 use Ornito\Console\Commands\MigrateCommand;
 use Ornito\Console\Commands\SeedCommand;
@@ -33,6 +34,10 @@ define('ORNITO_ROOT', dirname(__DIR__));
 $baseDir = dirname(__DIR__);
 
 $createModel = new CreateModelCommand(
+    modelsDir: $baseDir . '/app/Models',
+    migrationsDir: $baseDir . '/database/migrations',
+);
+$createRelation = new CreateRelationCommand(
     modelsDir: $baseDir . '/app/Models',
     migrationsDir: $baseDir . '/database/migrations',
 );
@@ -72,6 +77,16 @@ $registry = [
         'run' => static function (array $args) use ($createModel, $flushMessages): int {
             $exitCode = $createModel->execute($args);
             ($flushMessages)($createModel);
+
+            return $exitCode;
+        },
+    ],
+    'create:relation' => [
+        'description' => 'Generate a FK/pivot migration plus relationship methods on two models (no ORM).',
+        'usage' => 'php bin/ornito create:relation <Owner> <has-many|belongs-to|many-to-many> <Other> [--force]',
+        'run' => static function (array $args) use ($createRelation, $flushMessages): int {
+            $exitCode = $createRelation->execute($args);
+            ($flushMessages)($createRelation);
 
             return $exitCode;
         },
