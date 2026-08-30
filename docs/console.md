@@ -19,6 +19,7 @@ php bin\ornito <command> [arguments] [options]
 | `help` | Show all available commands |
 | `create:model <Name> [col:type ...] [--table=] [--force]` | Generate a model + migration |
 | `create:controller <Name> [--force]` | Generate a controller |
+| `create:relation <Owner> <has-many\|belongs-to\|many-to-many> <Other> [--force]` | Generate a FK/pivot migration + relationship methods |
 | `migrate` | Create database + apply pending migrations |
 | `db:seed [--force]` | Create or refresh the demo user (refuses in production) |
 | `db:fresh [--force]` | Drop all tables, migrate, seed |
@@ -124,6 +125,88 @@ Both `Producto` and `ProductoController` produce the same file — the command i
 | Option | Description |
 |---|---|
 | `--force` | Overwrite an existing controller file |
+
+## create:relation
+
+Generates a relationship between two existing models WITHOUT an ORM: an append-only migration that creates the physical link (a FK column for has-many/belongs-to, a pivot table for many-to-many) plus one explicit static method per model.
+
+```bash
+php bin\ornito create:relation User has-many Post
+php bin\ornito create:relation Post belongs-to User   # same pair, other side
+php bin\ornito create:relation User many-to-many Role
+```
+
+### What it generates
+
+**has-many / belongs-to** — the FK lives on the second model's table:
+
+```sql
+-- database/migrations/0002_relate_posts_to_users.sql
+ALTER TABLE `posts`
+    ADD COLUMN `user_id` INT UNSIGNED NOT NULL,
+    ADD CONSTRAINT `fk_posts_user_id`
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+        ON DELETE CASCADE;
+```
+
+And the model methods:
+
+```php
+// app/Models/User.php — many side
+public static function posts(int $userId): QueryBuilder
+{
+    return Post::query()->where('user_id', $userId);
+}
+
+// app/Models/Post.php — belongs-to side
+public static function user(array $post): ?array
+{
+    return User::find((int) ($post['user_id'] ?? 0));
+}
+```
+
+**many-to-many** — an alphabetically-named pivot table plus a subquery method on each side:
+
+```sql
+-- database/migrations/0002_create_role_user.sql
+CREATE TABLE `role_user` (
+    `role_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NOT NULL,
+    PRIMARY KEY (`role_id`, `user_id`),
+    CONSTRAINT `fk_role_user_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_role_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```php
+// app/Models/User.php
+public static function roles(int $userId): QueryBuilder
+{
+    return Role::query()->whereInSub('id', 'role_user', 'role_id', 'user_id', $userId);
+}
+```
+
+The subquery keeps the SQL explicit — `WHERE id IN (SELECT ...)` is visible in the query, not hidden behind a relation loader.
+
+### Conventions
+
+- FK column: `{singular_owner}_id` (snake_case of the owner class name).
+- Pivot table: the two singular names joined alphabetically (`role_user`, never `user_role`).
+- Pivot columns and FK references use the same INT UNSIGNED type as generated `id`s.
+- Both FK constraints use `ON DELETE CASCADE`.
+
+### Safety
+
+- Both model files must exist first (use `create:model`).
+- A relation whose migration already exists refuses to regenerate — running the same pair twice can never duplicate a FK/pivot (and `belongs-to` and `has-many` are the same pair).
+- `--force` regenerates **only** the model methods and only when they carry the generated marker. Hand-written methods are never replaced.
+- Every generated identifier is validated (strict regex + MySQL 64-character limit) before anything is written.
+
+After generating, apply the migration:
+
+```bash
+composer db:migrate
+```
 
 ## migrate
 

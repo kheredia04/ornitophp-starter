@@ -106,6 +106,7 @@ php bin/ornito db:seed              # Seed demo user
 php bin/ornito db:fresh             # Destructive: drop all → migrate → seed
 php bin/ornito create:model         # Generate model + migration
 php bin/ornito create:controller    # Generate controller
+php bin/ornito create:relation      # FK/pivot migration + relationship methods
 php bin/ornito show:auth-module     # Enable login/register pages
 php bin/ornito hide:auth-module     # Disable login/register pages
 ```

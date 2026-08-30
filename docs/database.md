@@ -87,7 +87,7 @@ OrnitoPHP does the opposite: **SQL is honest**. What you write is what runs. No 
 |---|---|
 | `User::where('active', true)->get()` | `User::query()->where('active', '=', true)->get()` |
 | Returns `User` objects | Returns **arrays** |
-| `hasMany`, `belongsTo` | No relationships — write the query |
+| `hasMany`, `belongsTo` | Explicit generated methods over plain queries (see Relationships) |
 | `$user->save()` | `User::update($id, $data)` |
 | Hidden joins and subqueries | Every query is visible |
 
@@ -151,7 +151,29 @@ User::delete(42);
 
 ## Fluent Query Builder
 
-Every model exposes a read-side builder via `::query()`. It covers: `select(...)`, chained `where()` (AND only), `orderBy()`, `limit()`, `offset()`, and terminal methods `get()`, `first()`, `count()`, and `paginate()`.
+Every model exposes a read-side builder via `::query()`. It covers: `select(...)`, chained `where()` (AND only), `whereInSub()` for N:M lookups, `orderBy()`, `limit()`, `offset()`, and terminal methods `get()`, `first()`, `count()`, and `paginate()`.
+
+### Inspecting the SQL (teaching extras)
+
+The builder can show you exactly what it would run — pair `toSql()` with `getBindings()` and the query becomes a transparent teaching tool:
+
+```php
+$builder = User::query()->where('active', 1)->orderBy('created_at', 'DESC');
+
+echo $builder->toSql();        // SELECT * FROM users WHERE active = ? ORDER BY created_at DESC
+print_r($builder->getBindings()); // [1]
+
+echo $builder->toCountSql();   // SELECT COUNT(*) FROM users WHERE active = ?
+```
+
+`toPreviewSql()` renders the same query with every value inline for logs and examples — **display only, never execute it**:
+
+```php
+echo User::query()->where('email', 'pato@ornitophp.dev')->toPreviewSql();
+// SELECT * FROM users WHERE email = 'pato@ornitophp.dev'
+```
+
+The preview is pure string rendering and never connects to the database.
 
 ### Basic queries
 
@@ -184,6 +206,20 @@ $count = User::query()
     ->count();
 ```
 
+### WHERE … IN (subquery)
+
+`whereInSub($column, $subqueryTable, $selectColumn, $whereColumn, $value)` adds a `WHERE column IN (SELECT ...)` condition. This is the N:M relationship shape — the subquery stays visible in the SQL instead of hiding behind a relation loader:
+
+```php
+// Role::query()->whereInSub('id', 'role_user', 'role_id', 'user_id', 7)
+// → SELECT * FROM roles WHERE id IN (SELECT role_id FROM role_user WHERE user_id = 7)
+$roles = Role::query()
+    ->whereInSub('id', 'role_user', 'role_id', 'user_id', $userId)
+    ->get();
+```
+
+Like every `where()`, the lookup value is bound as a parameter; the four identifiers are validated against the same strict regex as table/column names.
+
 ### Supported operators
 
 `=` `!=` `<>` `<` `>` `<=` `>=` `LIKE`
@@ -199,7 +235,50 @@ $count = User::query()
 - **Operators** and **directions** come from whitelists.
 - **LIMIT/OFFSET** are typed ints rejected when negative.
 
-**OR chains, grouped conditions, and relations are out of scope by design** — when a query needs them, write the SQL by hand so it stays visible.
+**OR chains and grouped conditions are out of scope by design** — when a query needs them, write the SQL by hand so it stays visible.
+
+## Relationships without an ORM
+
+Relationships are not magic: they are a FK (or a pivot table) plus plain queries. `create:relation` generates both, and the resulting methods are ordinary static methods you can read and customize.
+
+```bash
+php bin\ornito create:relation User has-many Post
+php bin\ornito create:relation Post belongs-to User   # same physical pair
+php bin\ornito create:relation User many-to-many Role
+```
+
+The generator writes an append-only migration and one explicit method per model. For has-many/belongs-to the FK lives on the second model's table (`posts.user_id` ← `users.id`):
+
+```php
+// User.php
+public static function posts(int $userId): QueryBuilder
+{
+    return Post::query()->where('user_id', $userId);
+}
+
+// Post.php
+public static function user(array $post): ?array
+{
+    return User::find((int) ($post['user_id'] ?? 0));
+}
+```
+
+Usage:
+
+```php
+$user = User::find(7);
+
+foreach (User::posts($user['id']) as $post) {
+    echo $post['title'];
+}
+
+$owner = Post::user($post);          // the User row, or null
+$roles = User::roles($user['id']);   // N:M through the role_user pivot
+```
+
+For many-to-many, the pivot is named alphabetically (`role_user`, never `user_role`) and each side gets a subquery method — `WHERE id IN (SELECT role_id FROM role_user WHERE user_id = ?)` — so the linking SQL is always explicit.
+
+**Guard rails:** both models must exist; a relation already generated refuses to duplicate; `--force` regenerates only generated methods, never hand-written code. See `docs/console.md` → `create:relation` for the full conventions and safety contract.
 
 ## Pagination
 
