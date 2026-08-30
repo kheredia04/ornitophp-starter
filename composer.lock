@@ -136,16 +136,16 @@
         },
         {
             "name": "ornitophp/framework",
-            "version": "v1.2.0",
+            "version": "v1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kheredia04/ornitophp-framework.git",
-                "reference": "ce664f14829535321feab1d25b5a30b86060271e"
+                "reference": "c8188e4138331064c7929b8bb218721bbbd391db"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kheredia04/ornitophp-framework/zipball/ce664f14829535321feab1d25b5a30b86060271e",
-                "reference": "ce664f14829535321feab1d25b5a30b86060271e",
+                "url": "https://api.github.com/repos/kheredia04/ornitophp-framework/zipball/c8188e4138331064c7929b8bb218721bbbd391db",
+                "reference": "c8188e4138331064c7929b8bb218721bbbd391db",
                 "shasum": ""
             },
             "require": {
@@ -175,9 +175,9 @@
             "description": "A tiny educational PHP 8.4 framework — front controller, middleware, sessions, query builder. Built to be read.",
             "support": {
                 "issues": "https://github.com/kheredia04/ornitophp-framework/issues",
-                "source": "https://github.com/kheredia04/ornitophp-framework/tree/v1.2.0"
+                "source": "https://github.com/kheredia04/ornitophp-framework/tree/v1.2.1"
             },
-            "time": "2026-08-30T07:58:36+00:00"
+            "time": "2026-08-30T08:11:30+00:00"
         },
         {
             "name": "phpoption/phpoption",

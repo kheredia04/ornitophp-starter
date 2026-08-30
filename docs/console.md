@@ -20,7 +20,7 @@ php bin\ornito <command> [arguments] [options]
 | `create:model <Name> [col:type ...] [--table=] [--force]` | Generate a model + migration |
 | `create:controller <Name> [--force]` | Generate a controller |
 | `migrate` | Create database + apply pending migrations |
-| `db:seed` | Create or refresh the demo user |
+| `db:seed [--force]` | Create or refresh the demo user (refuses in production) |
 | `db:fresh [--force]` | Drop all tables, migrate, seed |
 | `show:auth-module` | Expose login/register/logout/dashboard routes |
 | `hide:auth-module` | Hide the auth demo routes |
@@ -137,13 +137,28 @@ Migrations are tracked in a `schema_migrations` table. Each file runs at most on
 
 ## db:seed
 
-Creates or refreshes the demo user:
+Creates or refreshes the demo user (`pato@ornitophp.dev` / `platypus123`):
 
 ```bash
 php bin\ornito db:seed
 ```
 
-The seeder is idempotent — it uses `INSERT IGNORE` or equivalent so running it multiple times is safe.
+The seeder is idempotent — it updates or inserts the demo user instead of duplicating it, so running it multiple times is safe.
+
+**Production firewall.** The demo password is publicly known, so seeding in production would hijack whoever owns `pato@ornitophp.dev`. When `APP_ENV=production`, the command refuses and exits with code 1:
+
+```
+Refusing to seed: APP_ENV=production and the demo seeder writes a publicly-known
+password. Run with --force to seed anyway.
+```
+
+Pass `--force` to seed anyway in production:
+
+```bash
+php bin\ornito db:seed --force
+```
+
+An unset `APP_ENV` defaults to `local` so the create-project installer can still seed; real deployments must set `APP_ENV=production` (see `.env.example`).
 
 ## db:fresh
 
