@@ -20,6 +20,7 @@ php bin\ornito <command> [arguments] [options]
 | `create:model <Name> [col:type ...] [--table=] [--force]` | Generate a model + migration |
 | `create:controller <Name> [--force]` | Generate a controller |
 | `create:relation <Owner> <has-many\|belongs-to\|many-to-many> <Other> [--force]` | Generate a FK/pivot migration + relationship methods |
+| `explain "<SELECT sql>"` | Show how MySQL would run a SELECT (read-only; inline literals) |
 | `migrate` | Create database + apply pending migrations |
 | `db:seed [--force]` | Create or refresh the demo user (refuses in production) |
 | `db:fresh [--force]` | Drop all tables, migrate, seed |

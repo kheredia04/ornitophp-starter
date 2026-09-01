@@ -64,7 +64,9 @@ This isn't a framework you document *after*. It's designed to be read:
 - Every decision has a **why** in the docblocks
 - The `docs/` folder explains design rules — not just API reference
 - The query builder shows the SQL it runs (`toSql()`, `toPreviewSql()`) — no hidden queries
-- The test suite **is** the living documentation (192 tests, 572 assertions)
+- `explain()` / `php bin/ornito explain "<SELECT sql>"` reveal HOW MySQL runs each query
+- The debug bar (footer when `APP_DEBUG=true`) counts queries per request and flags N+1 patterns
+- The test suite **is** the living documentation (208 tests, 630 assertions)
 - Edge cases are tested and explained
 
 ### 5. Dual error negotiation
@@ -108,6 +110,7 @@ php bin/ornito db:fresh             # Destructive: drop all → migrate → seed
 php bin/ornito create:model         # Generate model + migration
 php bin/ornito create:controller    # Generate controller
 php bin/ornito create:relation      # FK/pivot migration + relationship methods
+php bin/ornito explain "<SELECT sql>"  # Show how MySQL would run a SELECT
 php bin/ornito show:auth-module     # Enable login/register pages
 php bin/ornito hide:auth-module     # Disable login/register pages
 ```

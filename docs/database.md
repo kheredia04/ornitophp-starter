@@ -335,3 +335,26 @@ $users = $statement->fetchAll();
 ```
 
 Always use prepared statements. Never interpolate user input into SQL strings.
+
+## Debug bar & EXPLAIN
+
+This starter ships the **debug bar**: with `APP_DEBUG=true` (the `.env.example` default), a fixed footer counts the queries of the current request and their total time — and flags repeated SQL, the N+1 smell:
+
+```
+12 queries · 8 ms    same query ×8
+```
+
+The bar reads `Ornito\Database\QueryLog::summary()` — the same snapshot you can use in code — and only queries that go through Model CRUD or the QueryBuilder are counted (raw `Connection::pdo()` usage is excluded by design).
+
+To see HOW MySQL runs a query, use the console:
+
+```bash
+php bin/ornito explain "SELECT * FROM users WHERE id = 1"
+```
+
+```
+table  type   key      rows  Extra
+users  const  PRIMARY  1     NULL
+```
+
+`type=const` + `key=PRIMARY` is the ideal plan. A query without a useful index reports `type=ALL` (full table scan) and `key=NULL`. Full details live in the framework docs: `docs/database.md` → "EXPLAIN" and "Debug query log & the N+1 detector".

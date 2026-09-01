@@ -23,6 +23,7 @@ use Ornito\Console\Commands\AuthModuleCommand;
 use Ornito\Console\Commands\CreateControllerCommand;
 use Ornito\Console\Commands\CreateModelCommand;
 use Ornito\Console\Commands\CreateRelationCommand;
+use Ornito\Console\Commands\ExplainCommand;
 use Ornito\Console\Commands\FreshDatabaseCommand;
 use Ornito\Console\Commands\MigrateCommand;
 use Ornito\Console\Commands\SeedCommand;
@@ -42,6 +43,7 @@ $createRelation = new CreateRelationCommand(
     migrationsDir: $baseDir . '/database/migrations',
 );
 $createController = new CreateControllerCommand();
+$explain = new ExplainCommand();
 // One class, two directions: the registry binds one instance per command name.
 $authShow = new AuthModuleCommand(show: true);
 $authHide = new AuthModuleCommand(show: false);
@@ -97,6 +99,16 @@ $registry = [
         'run' => static function (array $args) use ($createController, $flushMessages): int {
             $exitCode = $createController->execute($args);
             ($flushMessages)($createController);
+
+            return $exitCode;
+        },
+    ],
+    'explain' => [
+        'description' => 'Show how MySQL would run a SELECT (EXPLAIN — read-only).',
+        'usage' => 'php bin/ornito explain "<SELECT sql>"',
+        'run' => static function (array $args) use ($explain, $flushMessages): int {
+            $exitCode = $explain->execute($args);
+            ($flushMessages)($explain);
 
             return $exitCode;
         },

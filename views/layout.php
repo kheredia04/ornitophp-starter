@@ -49,6 +49,23 @@ declare(strict_types=1);
     <main class="container">
         <?= $content /* Rendered template HTML — intentionally not escaped again here. */ ?>
     </main>
+<?php if (config('app.debug')): ?>
+    <?php
+        // Debug bar: per-request query counter from the framework boundary
+        // (Model CRUD + QueryBuilder). Same SQL repeated 5+ times is the
+        // classic N+1 smell — the bar flags it so you SEE it while learning.
+        $querySummary = Ornito\Database\QueryLog::summary();
+    ?>
+    <footer class="debug-bar">
+        <span><?= $querySummary['count'] ?> queries · <?= round($querySummary['total_ms'], 1) ?> ms</span>
+        <?php foreach (array_slice($querySummary['repeated'], 0, 3) as $repeatedSql => $runs): ?>
+            <span class="debug-bar__warning" title="<?= e($repeatedSql) ?>">same query &times;<?= $runs ?></span>
+        <?php endforeach; ?>
+        <?php if (count($querySummary['repeated']) > 3): ?>
+            <span>+<?= count($querySummary['repeated']) - 3 ?> more</span>
+        <?php endif; ?>
+    </footer>
+<?php endif; ?>
 <?php if ($style === 'app'): ?>
     <button class="theme-toggle" type="button" aria-label="Toggle dark/light theme">
         <span class="theme-toggle-icon--dark">&#9790;</span>
